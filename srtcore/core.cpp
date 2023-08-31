@@ -6389,27 +6389,32 @@ int srt::CUDT::sndDropTooLate()
     }
 
     const time_point tnow = steady_clock::now();
-    const int buffdelay_ms = (int) count_milliseconds(m_pSndBuffer->getBufferingDelay(tnow));
 
-    // high threshold (msec) at tsbpd_delay plus sender/receiver reaction time (2 * 10ms)
-    // Minimum value must accommodate an I-Frame (~8 x average frame size)
-    // >>need picture rate or app to set min treshold
-    // >>using 1 sec for worse case 1 frame using all bit budget.
-    // picture rate would be useful in auto SRT setting for min latency
-    // XXX Make SRT_TLPKTDROP_MINTHRESHOLD_MS option-configurable
-    const int threshold_ms = (m_config.iSndDropDelay >= 0)
-        ? std::max(m_iPeerTsbPdDelay_ms + m_config.iSndDropDelay, +SRT_TLPKTDROP_MINTHRESHOLD_MS)
-            + (2 * COMM_SYN_INTERVAL_US / 1000)
-        : 0;
+    /* Check the timestamp of the oldest packet in the queue. If it has no time to be transmitted, drop all packets that 
+    have no chance to make it through the network 
+    RTT/2 is used instead of OWD, further developments are needed to handle networks that are not symmetrical*/
 
-    if (threshold_ms == 0 || buffdelay_ms <= threshold_ms)
+    duration iPeerTsbPdDelay_us(m_iPeerTsbPdDelay_ms*1000);
+    time_point first_pkt_ts = m_pSndBuffer->getFirstPacketTS();
+    time_point last_time_first_pkt = first_pkt_ts + iPeerTsbPdDelay_us - duration(m_iSRTT/2);
+
+    time_point time_to_drop(first_pkt_ts);
+    time_point threshold_us = first_pkt_ts + iPeerTsbPdDelay_us - (duration(m_iSRTT/2));
+
+    if(threshold_us >= tnow)
+    {
         return 0;
-
+    }
+    else
+    {
+        //if threshold_ms is greater than tnow, we have to drop (tnow-treshold_ms)us worth of packets after first_pkt_ts
+        time_to_drop += (tnow - threshold_us); 
+    }
     // protect packet retransmission
     ScopedLock rcvlck(m_RecvAckLock);
     int dbytes;
     int32_t first_msgno;
-    const int dpkts = m_pSndBuffer->dropLateData((dbytes), (first_msgno), tnow - milliseconds_from(threshold_ms));
+    const int dpkts = m_pSndBuffer->dropLateData((dbytes), (first_msgno), time_to_drop);
     if (dpkts <= 0)
         return 0;
 

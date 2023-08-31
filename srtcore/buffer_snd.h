@@ -182,7 +182,8 @@ public:
     /// @return the delay value.
     SRT_ATTR_EXCLUDES(m_BufLock)
     duration getBufferingDelay(const time_point& tnow) const;
-
+    time_point getFirstPacketTS() const;
+    
     uint64_t getInRatePeriod() const { return m_rateEstimator.getInRatePeriod(); }
 
     /// Retrieve input bitrate in bytes per second

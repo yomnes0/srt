@@ -625,6 +625,16 @@ CSndBuffer::duration CSndBuffer::getBufferingDelay(const time_point& tnow) const
     return tnow - m_pFirstBlock->m_tsOriginTime;
 }
 
+CSndBuffer::time_point CSndBuffer::getFirstPacketTS() const
+{
+    ScopedLock lck(m_BufLock);
+    SRT_ASSERT(m_pFirstBlock);
+    if (m_iCount == 0)
+        return time_point(0);
+
+    return m_pFirstBlock->m_tsOriginTime;
+}
+
 int CSndBuffer::dropLateData(int& w_bytes, int32_t& w_first_msgno, const steady_clock::time_point& too_late_time)
 {
     int     dpkts  = 0;
