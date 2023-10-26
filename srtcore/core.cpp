@@ -6413,6 +6413,7 @@ int srt::CUDT::sndDropTooLate()
     if (dpkts <= 0)
         return 0;
 
+    m_iFlowWindowSize = m_iFlowWindowSize + dpkts;
     // If some packets were dropped update stats, socket state, loss list and the parent group if any.
     enterCS(m_StatsLock);
     m_stats.sndr.dropped.count(dbytes);;
