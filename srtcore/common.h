@@ -219,6 +219,8 @@ enum UDTMessageType
     UMSG_ACKACK = 6, //< Acknowledgement of Acknowledgement. Add info: The ACK sequence number
     UMSG_DROPREQ = 7, //< Message Drop Request. Add info: Message ID. Control Info: (first, last) number of the message.
     UMSG_PEERERROR = 8, //< Signal from the Peer side. Add info: Error code.
+    UMSG_TIMESTAMPS = 9, //< Timestamsp for one way delay evaluation
+
     // ... add extra code types here
     UMSG_END_OF_TYPES,
     UMSG_EXT = 0x7FFF //< For the use of user-defined control packets.

@@ -409,6 +409,10 @@ void CPacket::pack(UDTMessageType pkttype, const int32_t* lparam, void* rparam, 
         m_PacketVector[PV_DATA].set((void*)&m_extra_pad, 4);
 
         break;
+    
+    case UMSG_TIMESTAMPS: 
+        m_PacketVector[PV_DATA].set(rparam, size);
+        break;
 
     case UMSG_EXT: // 0x7FFF - Reserved for user defined control packets
         // for extended control packet

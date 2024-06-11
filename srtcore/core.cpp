@@ -991,6 +991,7 @@ void srt::CUDT::open()
     m_tsNextNAKTime.store(currtime + m_tdNAKInterval);
     m_tsLastRspAckTime = currtime;
     m_tsLastSndTime.store(currtime);
+    m_tsLastSndTimeCD.store(currtime);
 
 #if ENABLE_BONDING
     m_tsUnstableSince   = steady_clock::time_point();
@@ -8004,7 +8005,11 @@ void srt::CUDT::sendCtrl(UDTMessageType pkttype, const int32_t* lparam, void* rp
         nbsent        = m_pSndQueue->sendto(m_PeerAddr, ctrlpkt, m_SourceAddr);
 
         break;
-
+    case UMSG_TIMESTAMPS:
+    {
+        nbsent = sendTimestampsPacket(ctrlpkt, rparam, size);
+    }
+        break;
     case UMSG_EXT: // 0x7FFF - Resevered for future use
         break;
 
@@ -8038,6 +8043,40 @@ bool srt::CUDT::getFirstNoncontSequence(int32_t& w_seq, string& w_log_reason)
     w_log_reason = "expected next";
 
     return true;
+}
+
+uint64_t getTimestamps64(void)
+{
+    struct timespec now;    clock_gettime (CLOCK_MONOTONIC, &now);
+    return (((uint64_t)now.tv_sec * (uint64_t)1000000)
+            + (uint64_t)(now.tv_nsec / 1000ULL));}
+
+int srt::CUDT::sendTimestampsPacket(CPacket& ctrlpkt, void *data, int size)
+{
+        uint64_t *timestamps = (uint64_t *) data;
+        if(timestamps[0])
+        {
+            timestamps[2] = getTimestamps64();
+        }
+        else
+            timestamps[0] = getTimestamps64();
+        
+        ctrlpkt.pack(UMSG_TIMESTAMPS, NULL, (void *) timestamps, 3*sizeof(uint64_t));
+        ctrlpkt.set_id(m_PeerID);
+        return m_pSndQueue->sendto(m_PeerAddr, ctrlpkt, m_SourceAddr);
+}
+
+int srt::CUDT::processTImestampsPacket(const CPacket& ctrlpkt)
+{
+    uint64_t* timestamps       = (uint64_t*)ctrlpkt.m_pcData;
+    if(timestamps[2])
+        std::cout << "FETCHED " << timestamps[0] << " " << timestamps[1] << " " << timestamps[2] << std::endl;
+    else
+    {
+        timestamps[1] = getTimestamps64();
+        sendCtrl(UMSG_TIMESTAMPS, NULL, timestamps, 3*sizeof(uint64_t));
+    }
+    return 0;
 }
 
 
@@ -9184,6 +9223,10 @@ void srt::CUDT::processCtrl(const CPacket &ctrlpkt)
 
     case UMSG_EXT: // 0x7FFF - reserved and user defined messages
         processCtrlUserDefined(ctrlpkt);
+        break;
+    
+    case UMSG_TIMESTAMPS:
+        processTImestampsPacket(ctrlpkt);
         break;
 
     default:
@@ -11621,6 +11664,13 @@ void srt::CUDT::checkTimers()
 
     // Check if FAST or LATE packet retransmission is required
     checkRexmitTimer(currtime);
+    if(currtime > m_tsLastSndTimeCD.load() + microseconds_from(COMM_CD_TS_PERIOD))
+    {
+        uint64_t timestamps[3] {0};
+        sendCtrl(UMSG_TIMESTAMPS, NULL, timestamps);
+        m_tsLastSndTimeCD.store(currtime);
+
+    }
 
     if (currtime > m_tsLastSndTime.load() + microseconds_from(COMM_KEEPALIVE_PERIOD_US))
     {
