@@ -8070,7 +8070,13 @@ int srt::CUDT::processTImestampsPacket(const CPacket& ctrlpkt)
 {
     uint64_t* timestamps       = (uint64_t*)ctrlpkt.m_pcData;
     if(timestamps[2])
+    {
+        for(int i = 0; i < 3; i++)
+        {
+            m_pTimestamps[i] = timestamps[i];
+        }
         std::cout << "FETCHED " << timestamps[0] << " " << timestamps[1] << " " << timestamps[2] << std::endl;
+    }
     else
     {
         timestamps[1] = getTimestamps64();

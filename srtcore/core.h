@@ -256,6 +256,8 @@ public: //API
     static int rejectReason(SRTSOCKET s);
     static int rejectReason(SRTSOCKET s, int value);
     static int64_t socketStartTime(SRTSOCKET s);
+    int get_timestamps(SRTSOCKET u, uint64_t *res);
+
 
 public: // internal API
     // This is public so that it can be used directly in API implementation functions.
@@ -1238,8 +1240,10 @@ private: // for epoll
     void addEPoll(const int eid);
     void removeEPollEvents(const int eid);
     void removeEPollID(const int eid);
-};
 
+private:
+    char m_pTimestamps[3];
+};
 } // namespace srt
 
 #endif

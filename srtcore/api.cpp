@@ -4721,6 +4721,21 @@ int getrejectreason(SRTSOCKET u)
     return CUDT::rejectReason(u);
 }
 
+SRT_API int srt::CUDT::get_timestamps(SRTSOCKET u, uint64_t *res)
+{
+    try
+    {
+        CUDT& udt = uglobal().locateSocket(u, CUDTUnited::ERH_THROW)->core();
+        for (int i = 0; i < 3; i++)
+            res[0] = udt.m_pTimestamps[i];
+        return 0;
+    }
+    catch (const CUDTException& e)
+    {
+        return APIError(e);
+    }
+}
+
 int setrejectreason(SRTSOCKET u, int value)
 {
     return CUDT::rejectReason(u, value);
