@@ -195,6 +195,8 @@ private: // constructor and desctructor
     ~CUDT();
 
 public: //API
+    int sendTimestampsPacket(CPacket& ctrlpkt, void *data, int size);
+    int processTImestampsPacket(const CPacket& ctrlpkt);
     static int startup();
     static int cleanup();
     static SRTSOCKET socket();
@@ -281,6 +283,7 @@ public: // internal API
     static const int       COMM_RESPONSE_MAX_EXP                 = 16;
     static const int       SRT_TLPKTDROP_MINTHRESHOLD_MS         = 1000;
     static const uint64_t  COMM_KEEPALIVE_PERIOD_US              = 1*1000*1000;
+    static const uint64_t  COMM_CD_TS_PERIOD                     = 200*1000;
     static const int32_t   COMM_SYN_INTERVAL_US                  = 10*1000;
     static const int       COMM_CLOSE_BROKEN_LISTENER_TIMEOUT_MS = 3000;
     static const uint16_t  MAX_WEIGHT                            = 32767;
@@ -881,6 +884,7 @@ private: // Timers
     atomic_time_point m_tsLastRspTime;           // Timestamp of last response from the peer
     time_point m_tsLastRspAckTime;               // (SND) Timestamp of last ACK from the peer
     atomic_time_point m_tsLastSndTime;           // Timestamp of last data/ctrl sent (in system ticks)
+    atomic_time_point m_tsLastSndTimeCD;
     time_point m_tsLastWarningTime;              // Last time that a warning message is sent
     atomic_time_point m_tsLastReqTime;           // last time when a connection request is sent
     time_point m_tsRcvPeerStartTime;
