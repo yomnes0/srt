@@ -1,4 +1,4 @@
-name: cxx11
+name: cxx11_ubuntu2404
 
 on:
   push:
