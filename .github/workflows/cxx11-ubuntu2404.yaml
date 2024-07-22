@@ -19,7 +19,7 @@ jobs:
     - name: configure
       run: |
         mkdir _build && cd _build
-        cmake ../ -DENABLE_STDCXX_SYNC=ON -DENABLE_ENCRYPTION=ON -DENABLE_UNITTESTS=ON -DENABLE_BONDING=ON -DENABLE_TESTING=ON -DENABLE_EXAMPLES=ON -DENABLE_CODE_COVERAGE=ON -DSRT_EXTRA_CFLAGS="-fsanitize=thread"
+        cmake ../ -DENABLE_STDCXX_SYNC=ON -DENABLE_ENCRYPTION=ON -DENABLE_UNITTESTS=ON -DENABLE_BONDING=ON -DENABLE_TESTING=ON -DENABLE_EXAMPLES=ON -DENABLE_CODE_COVERAGE=ON -DSRT_EXTRA_CFLAGS="-fsanitize=address"
     - name: build
       run: cd _build && build-wrapper-linux-x86-64 --out-dir ${{ env.BUILD_WRAPPER_OUT_DIR }} cmake --build .
     - name: test
