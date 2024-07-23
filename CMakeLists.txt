@@ -9,7 +9,7 @@
 
 cmake_minimum_required (VERSION 2.8.12 FATAL_ERROR)
 set (SRT_VERSION 1.5.3)
-
+set(CMAKE_CXX_COMPILER_LAUNCHER env LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.8)
 set (CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/scripts")
 include(haiUtil) # needed for set_version_variables
 # CMake version 3.0 introduced the VERSION option of the project() command
