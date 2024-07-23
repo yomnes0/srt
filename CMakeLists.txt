@@ -1477,7 +1477,7 @@ endif()
 
 
 if (ENABLE_UNITTESTS AND ENABLE_CXX11)
-        set(CMAKE_CXX_COMPILER_LAUNCHER env LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.8)
+#        set(CMAKE_CXX_COMPILER_LAUNCHER env LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.8)
 
 	if (${CMAKE_VERSION} VERSION_LESS "3.10.0") 
 		message(STATUS "VERSION < 3.10 -- adding test using the old method")
