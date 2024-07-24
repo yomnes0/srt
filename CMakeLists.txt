@@ -9,8 +9,9 @@
 
 cmake_minimum_required (VERSION 2.8.12 FATAL_ERROR)
 set (SRT_VERSION 1.5.3)
-
 set (CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/scripts")
+#set(CMAKE_CXX_COMPILER_LAUNCHER env LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.8)
+
 include(haiUtil) # needed for set_version_variables
 # CMake version 3.0 introduced the VERSION option of the project() command
 # to specify a project version as well as the name.
@@ -1476,6 +1477,7 @@ endif()
 
 
 if (ENABLE_UNITTESTS AND ENABLE_CXX11)
+#        set(CMAKE_CXX_COMPILER_LAUNCHER env LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.8)
 
 	if (${CMAKE_VERSION} VERSION_LESS "3.10.0") 
 		message(STATUS "VERSION < 3.10 -- adding test using the old method")
@@ -1491,9 +1493,9 @@ if (ENABLE_UNITTESTS AND ENABLE_CXX11)
 	# Version ranges are only supported with CMake 3.19 or later.
 	# Need GTest v1.10 or higher to support GTEST_SKIP.
 	if (${CMAKE_VERSION} VERSION_LESS "3.19.0")
-		find_package(GTest 1.10)
+		find_package(GTest 1.11)
 	else()
-		find_package(GTest 1.10...1.12)
+		find_package(GTest 1.11)
 	endif()
 	if (NOT GTEST_FOUND)
 		message(STATUS "GTEST not found! Fetching from git.")
@@ -1528,6 +1530,7 @@ if (ENABLE_UNITTESTS AND ENABLE_CXX11)
 		)
 		#set_tests_properties(test-srt PROPERTIES RUN_SERIAL TRUE)
 	else()
+#		set(CMAKE_CXX_COMPILER_LAUNCHER env LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.8)
 		set_tests_properties(${tests_srt} PROPERTIES RUN_SERIAL TRUE)
 		gtest_discover_tests(test-srt)
 	endif()
