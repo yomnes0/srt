@@ -7895,11 +7895,14 @@ void srt::CUDT::sendCtrl(UDTMessageType pkttype, const int32_t* lparam, void* rp
     }
 
     case UMSG_ACKACK: // 110 - Acknowledgement of Acknowledgement
-        ctrlpkt.pack(pkttype, lparam);
+     {
+        uint32_t *sentAckTimestamp = (uint32_t *) rparam;
+        ctrlpkt.pack(pkttype, lparam, rparam, 2*sizeof(int32_t));
         ctrlpkt.set_id(m_PeerID);
         nbsent        = m_pSndQueue->sendto(m_PeerAddr, ctrlpkt, m_SourceAddr);
 
         break;
+     }
 
     case UMSG_LOSSREPORT: // 011 - Loss Report
     {
@@ -8075,7 +8078,6 @@ int srt::CUDT::processTImestampsPacket(const CPacket& ctrlpkt)
         {
             m_pTimestamps[i] = timestamps[i];
         }
-        std::cout << "FETCHED " << timestamps[0] << " " << timestamps[1] << " " << timestamps[2] << std::endl;
     }
     else
     {
@@ -8444,7 +8446,10 @@ void srt::CUDT::processCtrlAck(const CPacket &ctrlpkt, const steady_clock::time_
 {
     const int32_t* ackdata       = (const int32_t*)ctrlpkt.m_pcData;
     const int32_t  ackdata_seqno = ackdata[ACKD_RCVLASTACK];
-
+    std::cout << "FIRST " << ctrlpkt.getMsgTimeStamp() << " SECOND " << makeTS(steady_clock::now(), m_stats.tsStartTime) << std::endl;
+    int32_t timestamps[2];
+    timestamps[0] = ctrlpkt.getMsgTimeStamp();
+    timestamps[1] = makeTS(steady_clock::now(), m_stats.tsStartTime);
     // Check the value of ACK in case when it was some rogue peer
     if (ackdata_seqno < 0)
     {
@@ -8490,7 +8495,7 @@ void srt::CUDT::processCtrlAck(const CPacket &ctrlpkt, const steady_clock::time_
         // already acknowledged (with ACKACK) has come again, which probably means ACKACK was lost.
         if ((currtime - m_SndLastAck2Time > microseconds_from(COMM_SYN_INTERVAL_US)) || (ack_seqno == m_iSndLastAck2))
         {
-            sendCtrl(UMSG_ACKACK, &ack_seqno);
+            sendCtrl(UMSG_ACKACK, &ack_seqno, &timestamps, 0);
             m_iSndLastAck2       = ack_seqno;
             m_SndLastAck2Time = currtime;
         }
@@ -8700,7 +8705,17 @@ void srt::CUDT::processCtrlAck(const CPacket &ctrlpkt, const steady_clock::time_
 
 void srt::CUDT::processCtrlAckAck(const CPacket& ctrlpkt, const time_point& tsArrival)
 {
+    const int32_t* ackdata       = (const int32_t*)ctrlpkt.m_pcData;
+    int32_t sentAckAck = ctrlpkt.getMsgTimeStamp();
+    int32_t receivedAckAck = makeTS(steady_clock::now(), m_stats.tsStartTime);
+    int32_t sentAck = ackdata[0];
+    int32_t receivedAck = ackdata[1];
+    std::cout << "FETCHED " << sentAck << " " << receivedAck << " " << sentAckAck << " ACKACK " << receivedAckAck << std::endl;
+
+
     int32_t ack = 0;
+
+
 
     // Calculate RTT estimate on the receiver side based on ACK/ACKACK pair.
     const int rtt = m_ACKWindow.acknowledge(ctrlpkt.getAckSeqNo(), ack, tsArrival);
@@ -11672,10 +11687,7 @@ void srt::CUDT::checkTimers()
     checkRexmitTimer(currtime);
     if(currtime > m_tsLastSndTimeCD.load() + microseconds_from(COMM_CD_TS_PERIOD))
     {
-        uint64_t timestamps[3] {0};
-        sendCtrl(UMSG_TIMESTAMPS, NULL, timestamps);
         m_tsLastSndTimeCD.store(currtime);
-
     }
 
     if (currtime > m_tsLastSndTime.load() + microseconds_from(COMM_KEEPALIVE_PERIOD_US))
